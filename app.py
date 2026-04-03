@@ -1,18 +1,24 @@
 import os
+import json
 import threading
 import time
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_from_directory, redirect
 import docker
 
 app = Flask(__name__)
 
 UPLOAD_FOLDER = "/app/uploads"
+CONFIG_FOLDER = "/app/config"
+DYNAMIC_FILE = os.path.join(CONFIG_FOLDER, "dynamic.json")
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(CONFIG_FOLDER, exist_ok=True)
 
 docker_client = docker.DockerClient("unix:///var/run/docker.sock")
 
 containers_list = []
 static_files_list = []
+dynamic_entries_list = []
 
 
 def safe_path_segment(name):
@@ -35,6 +41,37 @@ def scan_static_files():
                 files.append({"name": folder_name, "url": f"/{folder_name}/"})
     files.sort(key=lambda item: item["name"].lower())
     static_files_list = files
+
+
+def scan_dynamic_entries():
+    global dynamic_entries_list
+    entries = []
+    if not os.path.isfile(DYNAMIC_FILE):
+        dynamic_entries_list = []
+        return
+
+    try:
+        with open(DYNAMIC_FILE, "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        if isinstance(data, list):
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                name = str(item.get("name", "")).strip()
+                url = str(item.get("url", "")).strip()
+                if name and url:
+                    entries.append({"name": name, "url": url})
+    except (OSError, ValueError, TypeError):
+        pass
+
+    entries.sort(key=lambda item: item["name"].lower())
+    dynamic_entries_list = entries
+
+
+def save_dynamic_entries(entries):
+    with open(DYNAMIC_FILE, "w", encoding="utf-8") as file:
+        json.dump(entries, file, indent=2)
 
 
 def watch_containers():
@@ -60,11 +97,21 @@ def watch_static_files():
         time.sleep(5)
 
 
+def watch_dynamic_entries():
+    while True:
+        scan_dynamic_entries()
+        time.sleep(5)
+
+
 @app.route("/")
 def dashboard():
     scan_static_files()
+    scan_dynamic_entries()
     return render_template(
-        "index.html", containers=containers_list, static_files=static_files_list
+        "index.html",
+        containers=containers_list,
+        static_files=static_files_list,
+        dynamic_entries=dynamic_entries_list,
     )
 
 
@@ -122,6 +169,26 @@ def upload():
     return "OK", 200
 
 
+@app.route("/dynamic", methods=["POST"])
+def add_dynamic_entry():
+    name = (request.form.get("name") or "").strip()
+    url = (request.form.get("url") or "").strip()
+
+    if not name or not url:
+        return "Name and URL are required", 400
+
+    scan_dynamic_entries()
+
+    for entry in dynamic_entries_list:
+        if entry["name"].lower() == name.lower():
+            return "Name already exists", 400
+
+    updated = dynamic_entries_list + [{"name": name, "url": url}]
+    save_dynamic_entries(updated)
+    scan_dynamic_entries()
+    return redirect("/")
+
+
 @app.route("/<folder>/")
 def serve_static_index(folder):
     folder_name = safe_path_segment(folder)
@@ -145,5 +212,6 @@ def serve_static(filename):
 if __name__ == "__main__":
     threading.Thread(target=watch_containers, daemon=True).start()
     threading.Thread(target=watch_static_files, daemon=True).start()
+    threading.Thread(target=watch_dynamic_entries, daemon=True).start()
     port = int(os.environ.get("FLASK_RUN_PORT", 7111))
     app.run(host="0.0.0.0", port=port, debug=False)

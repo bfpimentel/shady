@@ -40,7 +40,7 @@
       .container {
         display: flex;
         flex-wrap: wrap;
-        gap: 0;
+        gap: 12px;
       }
       .item {
         border: 2px solid #f2f2f2;
@@ -50,8 +50,6 @@
         display: block;
         min-width: 200px;
         transition: all 0.1s ease;
-        margin-right: -2px;
-        margin-bottom: -2px;
       }
       .item:hover {
         background-color: #f2f2f2;
@@ -73,6 +71,31 @@
       }
       input[type="file"] {
         display: none;
+      }
+      .entry-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .entry-form input {
+        background: #090909;
+        color: #f2f2f2;
+        border: 2px solid #f2f2f2;
+        padding: 10px 12px;
+        font-family: "Victor Mono", monospace;
+      }
+      .entry-form button {
+        background: #f2f2f2;
+        color: #090909;
+        border: 2px solid #f2f2f2;
+        padding: 10px 14px;
+        font-family: "Victor Mono", monospace;
+        cursor: pointer;
+      }
+      .entry-form button:hover {
+        background: #090909;
+        color: #f2f2f2;
       }
     </style>
   </head>
@@ -103,6 +126,24 @@
         <p class="empty-text">no uploaded folders found</p>
         {% endfor %}
       </div>
+    </div>
+
+    <div class="section">
+      <h2>dynamic</h2>
+      <div class="container">
+        {% for entry in dynamic_entries %}
+        <a href="{{ entry.url }}" class="item" target="_blank">
+          {{ entry.name }}
+        </a>
+        {% else %}
+        <p class="empty-text">no dynamic entries found</p>
+        {% endfor %}
+      </div>
+      <form class="entry-form" action="/dynamic" method="post">
+        <input type="text" name="name" placeholder="name" required />
+        <input type="url" name="url" placeholder="https://example.com" required />
+        <button type="submit">add entry</button>
+      </form>
     </div>
 
     <form
