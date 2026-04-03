@@ -49,3 +49,7 @@ Requirements:
 ```bash
 docker compose down
 ```
+
+## Screenshots
+
+![dashboard](./assets/dashboard.png)
