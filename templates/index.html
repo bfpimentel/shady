@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>shady</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Victor+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Victor Mono", monospace;
+        background-color: #090909;
+        color: #f2f2f2;
+        min-height: 100vh;
+        padding: 40px;
+      }
+      h1 {
+        font-size: 48px;
+        font-weight: 700;
+        margin-bottom: 40px;
+        text-transform: lowercase;
+      }
+      .section {
+        margin-bottom: 60px;
+      }
+      h2 {
+        font-size: 14px;
+        font-weight: 400;
+        margin-bottom: 20px;
+        color: #9c9c9c;
+        text-transform: lowercase;
+      }
+      .container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+      }
+      .item {
+        border: 2px solid #f2f2f2;
+        padding: 20px 30px;
+        text-decoration: none;
+        color: #f2f2f2;
+        display: block;
+        min-width: 200px;
+        transition: all 0.1s ease;
+        margin-right: -2px;
+        margin-bottom: -2px;
+      }
+      .item:hover {
+        background-color: #f2f2f2;
+        color: #090909;
+      }
+      .empty-text {
+        color: #9c9c9c;
+        font-size: 14px;
+      }
+      .upload-area {
+        border: 2px dashed #f2f2f2;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        margin-top: 60px;
+      }
+      .upload-area:hover {
+        background-color: #151515;
+      }
+      input[type="file"] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>shady</h1>
+
+    <div class="section">
+      <h2>containers</h2>
+      <div class="container">
+       {% for container in containers %}
+        <a href="{{ container.url }}" class="item" target="_blank">
+          {{ container.name }}
+        </a>
+        {% else %}
+        <p class="empty-text">no containers found</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>static</h2>
+      <div class="container">
+        {% for file in static_files %}
+        <a href="{{ file.url }}" class="item" target="_blank">
+          {{ file.name }}
+        </a>
+        {% else %}
+        <p class="empty-text">no uploaded folders found</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <form
+      id="upload-form"
+      action="/upload"
+      method="post"
+      enctype="multipart/form-data"
+    >
+      <div
+        class="upload-area"
+        onclick="document.getElementById('file-input').click()"
+      >
+        <p>click to upload a folder (must contain index.html)</p>
+        <input
+          type="file"
+          id="file-input"
+          name="files"
+          webkitdirectory
+          directory
+          multiple
+        />
+      </div>
+    </form>
+
+    <script>
+      const uploadArea = document.querySelector(".upload-area");
+      const fileInput = document.getElementById("file-input");
+      const uploadForm = document.getElementById("upload-form");
+
+      async function uploadFiles(files) {
+        const selected = Array.from(files || []);
+        if (selected.length === 0) {
+          return;
+        }
+
+        const formData = new FormData();
+        for (const file of selected) {
+          const relativePath = file.webkitRelativePath || file.name;
+          formData.append("files", file, file.name);
+          formData.append("paths", relativePath);
+        }
+
+        const response = await fetch(uploadForm.action, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          alert(text || "Upload failed");
+          return;
+        }
+
+        window.location.reload();
+      }
+
+      fileInput.addEventListener("change", () => {
+        uploadFiles(fileInput.files);
+      });
+
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.style.backgroundColor = "#151515";
+      });
+
+      uploadArea.addEventListener("dragleave", () => {
+        uploadArea.style.backgroundColor = "";
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.style.backgroundColor = "";
+        uploadFiles(e.dataTransfer.files);
+      });
+    </script>
+  </body>
+</html>

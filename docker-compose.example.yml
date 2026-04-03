@@ -1,0 +1,15 @@
+services:
+  shady:
+    image: ghcr.io/bfpimentel/shady:latest
+    container_name: shady
+    restart: always
+    ports:
+      - "7111:7111"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/uploads:/app/uploads
+    env_file:
+      - .env
+    labels:
+      shady.name: shady
+      shady.url: http://localhost:7111

@@ -1,0 +1,11 @@
+__pycache__
+
+.venv
+.direnv
+.ruff_cache
+.env
+
+data
+docker-compose.yml
+
+uv.lock
