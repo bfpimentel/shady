@@ -7,8 +7,8 @@ import docker
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "/app/uploads"
-CONFIG_FOLDER = "/app/config"
+UPLOAD_FOLDER = "uploads"
+CONFIG_FOLDER = "config"
 DYNAMIC_FILE = os.path.join(CONFIG_FOLDER, "dynamic.json")
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -200,18 +200,13 @@ def serve_static_index(folder):
     return send_from_directory(folder_path, "index.html")
 
 
-@app.route("/<path:filename>")
-def serve_static(filename):
-    normalized = filename.strip("/")
-    if not normalized:
-        return "Not found", 404
-    return send_from_directory(UPLOAD_FOLDER, normalized)
-    return "Not found", 404
+@app.route("/assets/<path:filename>")
+def serve_assets(filename):
+    return send_from_directory("assets", filename)
 
 
 if __name__ == "__main__":
     threading.Thread(target=watch_containers, daemon=True).start()
     threading.Thread(target=watch_static_files, daemon=True).start()
     threading.Thread(target=watch_dynamic_entries, daemon=True).start()
-    port = int(os.environ.get("FLASK_RUN_PORT", 7111))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=7111, debug=False)

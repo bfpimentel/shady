@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>shady</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/shady.svg" />
     <link
       href="https://fonts.googleapis.com/css2?family=Victor+Mono:wght@400;700&display=swap"
       rel="stylesheet"
@@ -100,12 +101,15 @@
     </style>
   </head>
   <body>
-    <h1>shady</h1>
+    <header>
+      <img src="/assets/shady.svg" alt="logo" style="height: 48px" />
+      <h1>shady</h1>
+    </header>
 
     <div class="section">
       <h2>containers</h2>
       <div class="container">
-       {% for container in containers %}
+        {% for container in containers %}
         <a href="{{ container.url }}" class="item" target="_blank">
           {{ container.name }}
         </a>
@@ -141,7 +145,12 @@
       </div>
       <form class="entry-form" action="/dynamic" method="post">
         <input type="text" name="name" placeholder="name" required />
-        <input type="url" name="url" placeholder="https://example.com" required />
+        <input
+          type="url"
+          name="url"
+          placeholder="https://example.com"
+          required
+        />
         <button type="submit">add entry</button>
       </form>
     </div>

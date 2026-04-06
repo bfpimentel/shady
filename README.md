@@ -52,4 +52,4 @@ docker compose down
 
 ## Screenshots
 
-![dashboard](./assets/dashboard.png)
+![dashboard](./resources/dashboard.png)

@@ -2,7 +2,10 @@ FROM docker.io/library/python:3.12-slim
 
 WORKDIR /app
 
-COPY . .
+COPY pyproject.toml ./
+COPY app.py ./
+COPY templates/ ./templates/
+COPY assets/ ./assets/
 
 RUN pip install .
 
