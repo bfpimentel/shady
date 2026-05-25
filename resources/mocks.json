@@ -1,0 +1,36 @@
+{
+  "containers": [
+    {
+      "name": "grafana",
+      "url": "http://localhost:3000"
+    },
+    {
+      "name": "minio",
+      "url": "http://localhost:9001"
+    },
+    {
+      "name": "whoami",
+      "url": "http://localhost:8080"
+    }
+  ],
+  "static_files": [
+    {
+      "name": "portfolio",
+      "url": "/portfolio/"
+    },
+    {
+      "name": "notes",
+      "url": "/notes/"
+    }
+  ],
+  "dynamic_entries": [
+    {
+      "name": "docs",
+      "url": "https://docs.docker.com"
+    },
+    {
+      "name": "local api",
+      "url": "http://localhost:5000/docs"
+    }
+  ]
+}

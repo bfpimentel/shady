@@ -9,140 +9,66 @@
       href="https://fonts.googleapis.com/css2?family=Victor+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        font-family: "Victor Mono", monospace;
-        background-color: #090909;
-        color: #f2f2f2;
-        min-height: 100vh;
-        padding: 40px;
-      }
-      h1 {
-        font-size: 48px;
-        font-weight: 700;
-        margin-bottom: 40px;
-        text-transform: lowercase;
-      }
-      .section {
-        margin-bottom: 60px;
-      }
-      h2 {
-        font-size: 14px;
-        font-weight: 400;
-        margin-bottom: 20px;
-        color: #9c9c9c;
-        text-transform: lowercase;
-      }
-      .container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-      .item {
-        border: 2px solid #f2f2f2;
-        padding: 20px 30px;
-        text-decoration: none;
-        color: #f2f2f2;
-        display: block;
-        min-width: 200px;
-        transition: all 0.1s ease;
-      }
-      .item:hover {
-        background-color: #f2f2f2;
-        color: #090909;
-      }
-      .empty-text {
-        color: #9c9c9c;
-        font-size: 14px;
-      }
-      .upload-area {
-        border: 2px dashed #f2f2f2;
-        padding: 40px;
-        text-align: center;
-        cursor: pointer;
-        margin-top: 60px;
-      }
-      .upload-area:hover {
-        background-color: #151515;
-      }
-      input[type="file"] {
-        display: none;
-      }
-      .entry-form {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 18px;
-      }
-      .entry-form input {
-        background: #090909;
-        color: #f2f2f2;
-        border: 2px solid #f2f2f2;
-        padding: 10px 12px;
-        font-family: "Victor Mono", monospace;
-      }
-      .entry-form button {
-        background: #f2f2f2;
-        color: #090909;
-        border: 2px solid #f2f2f2;
-        padding: 10px 14px;
-        font-family: "Victor Mono", monospace;
-        cursor: pointer;
-      }
-      .entry-form button:hover {
-        background: #090909;
-        color: #f2f2f2;
-      }
-    </style>
+    <link rel="stylesheet" href="/assets/style.css" />
   </head>
   <body>
-    <header>
-      <img src="/assets/shady.svg" alt="logo" style="height: 48px" />
-      <h1>shady</h1>
-    </header>
+    <main>
+      <header>
+        <img src="/assets/shady.svg" alt="logo" style="height: 52px" />
+        <h1>shady</h1>
+        <p class="tagline">a quiet launch board for containers, static drops, and hand-pinned links.</p>
+        <p class="status">docker: <strong>{{ docker_status }}</strong>{% if use_mocks %} · mocks enabled{% endif %}</p>
+      </header>
 
-    <div class="section">
-      <h2>containers</h2>
+    <div class="grid">
+    <section class="section">
+      <h2><span>containers</span><span>{{ containers|length }}</span></h2>
       <div class="container">
         {% for container in containers %}
         <a href="{{ container.url }}" class="item" target="_blank">
-          {{ container.name }}
+          <span class="item-name">{{ container.name }}</span>
+          <span class="item-url">{{ container.url }}</span>
         </a>
         {% else %}
         <p class="empty-text">no containers found</p>
         {% endfor %}
       </div>
-    </div>
+    </section>
 
-    <div class="section">
-      <h2>static</h2>
+    <section class="section">
+      <h2><span>static</span><span>{{ static_files|length }}</span></h2>
       <div class="container">
         {% for file in static_files %}
         <a href="{{ file.url }}" class="item" target="_blank">
-          {{ file.name }}
+          <span class="item-name">{{ file.name }}</span>
+          <span class="item-url">{{ file.url }}</span>
         </a>
         {% else %}
         <p class="empty-text">no uploaded folders found</p>
         {% endfor %}
       </div>
-    </div>
+    </section>
 
-    <div class="section">
-      <h2>dynamic</h2>
+    <section class="section">
+      <h2><span>dynamic</span><span>{{ dynamic_entries|length }}</span></h2>
       <div class="container">
         {% for entry in dynamic_entries %}
-        <a href="{{ entry.url }}" class="item" target="_blank">
-          {{ entry.name }}
-        </a>
+        <div class="item-row">
+          <a href="{{ entry.url }}" class="item" target="_blank">
+            <span class="item-name">{{ entry.name }}</span>
+            <span class="item-url">{{ entry.url }}</span>
+          </a>
+          {% if not use_mocks %}
+          <form class="delete-form" action="/dynamic/{{ entry.name|urlencode }}" method="post">
+            <button class="delete-button" type="submit" aria-label="delete {{ entry.name }}">×</button>
+          </form>
+          {% endif %}
+        </div>
         {% else %}
         <p class="empty-text">no dynamic entries found</p>
         {% endfor %}
       </div>
+      {% if not use_mocks %}
       <form class="entry-form" action="/dynamic" method="post">
         <input type="text" name="name" placeholder="name" required />
         <input
@@ -153,9 +79,15 @@
         />
         <button type="submit">add entry</button>
       </form>
+      {% else %}
+      <p class="mock-note">dynamic entries are read from resources/mocks.json</p>
+      {% endif %}
+    </section>
     </div>
 
+    <div class="actions">
     <form
+      class="upload-card"
       id="upload-form"
       action="/upload"
       method="post"
@@ -176,6 +108,8 @@
         />
       </div>
     </form>
+    </div>
+    </main>
 
     <script>
       const uploadArea = document.querySelector(".upload-area");

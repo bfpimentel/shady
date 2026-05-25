@@ -2,6 +2,7 @@ import os
 import json
 import threading
 import time
+from urllib.parse import urlparse
 from flask import Flask, render_template, request, send_from_directory, redirect
 import docker
 
@@ -10,15 +11,36 @@ app = Flask(__name__)
 UPLOAD_FOLDER = "uploads"
 CONFIG_FOLDER = "config"
 DYNAMIC_FILE = os.path.join(CONFIG_FOLDER, "dynamic.json")
+MOCK_FILE = os.path.join("resources", "mocks.json")
+USE_MOCKS = os.getenv("SHADY_USE_MOCKS", "").lower() in {"1", "true", "yes", "on"}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CONFIG_FOLDER, exist_ok=True)
 
-docker_client = docker.DockerClient("unix:///var/run/docker.sock")
+docker_client = None
 
 containers_list = []
 static_files_list = []
 dynamic_entries_list = []
+docker_status = "mock" if USE_MOCKS else "unknown"
+
+
+def load_mock_entries(section):
+    try:
+        with open(MOCK_FILE, "r", encoding="utf-8") as file:
+            data = json.load(file)
+    except (OSError, ValueError, TypeError):
+        return []
+
+    entries = []
+    for item in data.get(section, []):
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name", "")).strip()
+        url = str(item.get("url", "")).strip()
+        if name and url:
+            entries.append({"name": name, "url": url})
+    return sorted(entries, key=lambda item: item["name"].lower())
 
 
 def safe_path_segment(name):
@@ -28,8 +50,24 @@ def safe_path_segment(name):
     return cleaned
 
 
+def is_valid_url(url):
+    parsed = urlparse(url)
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def get_docker_client():
+    global docker_client
+    if docker_client is None:
+        docker_client = docker.DockerClient("unix:///var/run/docker.sock")
+    return docker_client
+
+
 def scan_static_files():
     global static_files_list
+    if USE_MOCKS:
+        static_files_list = load_mock_entries("static_files")
+        return
+
     files = []
     if os.path.exists(UPLOAD_FOLDER):
         for folder_name in os.listdir(UPLOAD_FOLDER):
@@ -45,6 +83,10 @@ def scan_static_files():
 
 def scan_dynamic_entries():
     global dynamic_entries_list
+    if USE_MOCKS:
+        dynamic_entries_list = load_mock_entries("dynamic_entries")
+        return
+
     entries = []
     if not os.path.isfile(DYNAMIC_FILE):
         dynamic_entries_list = []
@@ -75,19 +117,26 @@ def save_dynamic_entries(entries):
 
 
 def watch_containers():
-    global containers_list
+    global containers_list, docker_status
     while True:
         try:
             new_list = []
-            for container in docker_client.containers.list():
+            if USE_MOCKS:
+                containers_list = load_mock_entries("containers")
+                docker_status = "mock"
+                time.sleep(5)
+                continue
+
+            for container in get_docker_client().containers.list():
                 labels = container.labels
                 if "shady.name" in labels and "shady.url" in labels:
                     new_list.append(
                         {"name": labels["shady.name"], "url": labels["shady.url"]}
                     )
-            containers_list = new_list
-        except:
-            pass
+            containers_list = sorted(new_list, key=lambda item: item["name"].lower())
+            docker_status = "connected"
+        except Exception:
+            docker_status = "unavailable"
         time.sleep(5)
 
 
@@ -105,6 +154,10 @@ def watch_dynamic_entries():
 
 @app.route("/")
 def dashboard():
+    global containers_list, docker_status
+    if USE_MOCKS:
+        containers_list = load_mock_entries("containers")
+        docker_status = "mock"
     scan_static_files()
     scan_dynamic_entries()
     return render_template(
@@ -112,6 +165,8 @@ def dashboard():
         containers=containers_list,
         static_files=static_files_list,
         dynamic_entries=dynamic_entries_list,
+        docker_status=docker_status,
+        use_mocks=USE_MOCKS,
     )
 
 
@@ -177,6 +232,9 @@ def add_dynamic_entry():
     if not name or not url:
         return "Name and URL are required", 400
 
+    if not is_valid_url(url):
+        return "URL must start with http:// or https://", 400
+
     scan_dynamic_entries()
 
     for entry in dynamic_entries_list:
@@ -187,6 +245,31 @@ def add_dynamic_entry():
     save_dynamic_entries(updated)
     scan_dynamic_entries()
     return redirect("/")
+
+
+@app.route("/dynamic/<name>", methods=["POST"])
+def delete_dynamic_entry(name):
+    target = (name or "").strip().lower()
+    if not target:
+        return "Name is required", 400
+
+    scan_dynamic_entries()
+    updated = [entry for entry in dynamic_entries_list if entry["name"].lower() != target]
+    if len(updated) == len(dynamic_entries_list):
+        return "Not found", 404
+
+    save_dynamic_entries(updated)
+    scan_dynamic_entries()
+    return redirect("/")
+
+
+@app.route("/health")
+def health():
+    return {
+        "ok": True,
+        "docker_status": docker_status,
+        "use_mocks": USE_MOCKS,
+    }
 
 
 @app.route("/<folder>/")

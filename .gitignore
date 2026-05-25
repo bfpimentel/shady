@@ -9,3 +9,5 @@ data
 docker-compose.yml
 
 uv.lock
+
+.DS_Store
