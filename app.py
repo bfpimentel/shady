@@ -283,6 +283,47 @@ def serve_static_index(folder):
     return send_from_directory(folder_path, "index.html")
 
 
+@app.route("/<folder>/<path:filename>")
+def serve_uploaded_file(folder, filename):
+    folder_name = safe_path_segment(folder)
+    if folder_name is None:
+        return "Not found", 404
+
+    folder_path = os.path.abspath(os.path.join(UPLOAD_FOLDER, folder_name))
+    if not os.path.isdir(folder_path):
+        return "Not found", 404
+
+    normalized = (filename or "").replace("\\", "/").strip("/")
+    if not normalized:
+        return send_from_directory(folder_path, "index.html")
+
+    parts = [safe_path_segment(part) for part in normalized.split("/")]
+    if any(part is None for part in parts):
+        return "Not found", 404
+
+    requested_path = os.path.abspath(os.path.join(folder_path, *parts))
+    if os.path.commonpath([folder_path, requested_path]) != folder_path:
+        return "Not found", 404
+
+    if os.path.isdir(requested_path):
+        index_path = os.path.join(requested_path, "index.html")
+        if os.path.isfile(index_path):
+            relative_index = os.path.relpath(index_path, folder_path)
+            return send_from_directory(folder_path, relative_index)
+        return "Not found", 404
+
+    if os.path.isfile(requested_path):
+        relative_file = os.path.relpath(requested_path, folder_path)
+        return send_from_directory(folder_path, relative_file)
+
+    html_path = f"{requested_path}.html"
+    if os.path.isfile(html_path) and os.path.commonpath([folder_path, html_path]) == folder_path:
+        relative_html = os.path.relpath(html_path, folder_path)
+        return send_from_directory(folder_path, relative_html)
+
+    return "Not found", 404
+
+
 @app.route("/assets/<path:filename>")
 def serve_assets(filename):
     return send_from_directory("assets", filename)

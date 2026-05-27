@@ -79,6 +79,19 @@ Requirements:
 - folder must contain `index.html` at its root
 - referenced assets (css/js/images) can live inside that folder and subfolders
 
+Uploaded folders are served as small static sites. Relative references from `index.html` work as expected, including assets and linked pages:
+
+```text
+/my-site/
+/my-site/header.jpeg
+/my-site/styles/main.css
+/my-site/about.html
+/my-site/about
+/my-site/nested/
+```
+
+Directory paths serve their own `index.html` when present, and extensionless links can resolve to matching `.html` files.
+
 ### Stop
 
 ```bash
