@@ -20,10 +20,10 @@
         <p class="status">docker: <strong>{{ docker_status }}</strong>{% if use_mocks %} · mocks enabled{% endif %}</p>
       </header>
 
-    <div class="grid">
-    <section class="section">
+    <div class="dashboard-grid">
+    <section class="section section-containers">
       <h2><span>containers</span><span>{{ containers|length }}</span></h2>
-      <div class="container">
+      <div class="entries entries-primary">
         {% for container in containers %}
         <a href="{{ container.url }}" class="item" target="_blank">
           <span class="item-name">{{ container.name }}</span>
@@ -35,9 +35,12 @@
       </div>
     </section>
 
-    <section class="section">
-      <h2><span>static</span><span>{{ static_files|length }}</span></h2>
-      <div class="container">
+    <section class="section section-secondary section-static" id="static-drop-zone">
+      <h2>
+        <span>static</span>
+        <span>{{ static_files|length }}</span>
+      </h2>
+      <div class="entries entries-compact">
         {% for file in static_files %}
         <a href="{{ file.url }}" class="item" target="_blank">
           <span class="item-name">{{ file.name }}</span>
@@ -47,11 +50,29 @@
         <p class="empty-text">no uploaded folders found</p>
         {% endfor %}
       </div>
+      <form
+        class="upload-control"
+        id="upload-form"
+        action="/upload"
+        method="post"
+        enctype="multipart/form-data"
+      >
+        <p>drop a folder anywhere in this section</p>
+        <button type="button" id="upload-button">choose folder</button>
+        <input
+          type="file"
+          id="file-input"
+          name="files"
+          webkitdirectory
+          directory
+          multiple
+        />
+      </form>
     </section>
 
-    <section class="section">
+    <section class="section section-secondary">
       <h2><span>dynamic</span><span>{{ dynamic_entries|length }}</span></h2>
-      <div class="container">
+      <div class="entries entries-compact">
         {% for entry in dynamic_entries %}
         <div class="item-row">
           <a href="{{ entry.url }}" class="item" target="_blank">
@@ -84,35 +105,11 @@
       {% endif %}
     </section>
     </div>
-
-    <div class="actions">
-    <form
-      class="upload-card"
-      id="upload-form"
-      action="/upload"
-      method="post"
-      enctype="multipart/form-data"
-    >
-      <div
-        class="upload-area"
-        onclick="document.getElementById('file-input').click()"
-      >
-        <p>click to upload a folder (must contain index.html)</p>
-        <input
-          type="file"
-          id="file-input"
-          name="files"
-          webkitdirectory
-          directory
-          multiple
-        />
-      </div>
-    </form>
-    </div>
     </main>
 
     <script>
-      const uploadArea = document.querySelector(".upload-area");
+      const uploadArea = document.getElementById("static-drop-zone");
+      const uploadButton = document.getElementById("upload-button");
       const fileInput = document.getElementById("file-input");
       const uploadForm = document.getElementById("upload-form");
 
@@ -143,24 +140,30 @@
         window.location.reload();
       }
 
+      uploadButton.addEventListener("click", () => {
+        fileInput.click();
+      });
+
       fileInput.addEventListener("change", () => {
         uploadFiles(fileInput.files);
       });
 
-      uploadArea.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        uploadArea.style.backgroundColor = "#151515";
-      });
+      if (uploadArea) {
+        uploadArea.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          uploadArea.classList.add("is-dragging");
+        });
 
-      uploadArea.addEventListener("dragleave", () => {
-        uploadArea.style.backgroundColor = "";
-      });
+        uploadArea.addEventListener("dragleave", () => {
+          uploadArea.classList.remove("is-dragging");
+        });
 
-      uploadArea.addEventListener("drop", (e) => {
-        e.preventDefault();
-        uploadArea.style.backgroundColor = "";
-        uploadFiles(e.dataTransfer.files);
-      });
+        uploadArea.addEventListener("drop", (e) => {
+          e.preventDefault();
+          uploadArea.classList.remove("is-dragging");
+          uploadFiles(e.dataTransfer.files);
+        });
+      }
     </script>
   </body>
 </html>

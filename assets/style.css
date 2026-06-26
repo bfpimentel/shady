@@ -22,16 +22,16 @@ body::before {
 }
 main {
   position: relative;
-  max-width: 1180px;
+  max-width: 1320px;
   margin: 0 auto;
 }
 header {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 18px;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px 18px;
   align-items: end;
   border: 2px solid #f2f2f2;
-  padding: 26px;
+  padding: 18px 22px;
   margin-bottom: 18px;
   background: #090909;
 }
@@ -43,30 +43,42 @@ h1 {
   letter-spacing: -0.08em;
 }
 .tagline {
-  grid-column: 1 / -1;
+  grid-column: 2 / 3;
   color: #9c9c9c;
   font-size: 13px;
   max-width: 680px;
+  align-self: center;
 }
 .status {
-  grid-column: 1 / -1;
-  border-top: 1px solid #3d3d3d;
-  padding-top: 12px;
+  grid-column: 3 / 4;
+  grid-row: 1 / 3;
+  border: 1px solid #3d3d3d;
+  padding: 10px 12px;
   color: #9c9c9c;
   font-size: 12px;
+  align-self: center;
 }
 .status strong { color: #f2f2f2; }
-.grid {
+.dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px;
+  align-items: start;
 }
 .section,
 .upload-card {
   border: 2px solid #f2f2f2;
   background: #090909;
-  min-height: 320px;
 }
+.section-containers {
+  min-height: 0;
+}
+.secondary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.section-secondary { min-height: 0; }
 h2 {
   font-size: 13px;
   font-weight: 400;
@@ -78,25 +90,41 @@ h2 {
   justify-content: space-between;
 }
 h2 span:last-child { color: #f2f2f2; }
-.container {
+.entries {
   display: grid;
   gap: 10px;
-  padding: 14px;
+  padding: 16px;
+}
+.entries-primary {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  align-items: start;
+}
+.entries-compact {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
 }
 .item-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
 }
 .item {
   border: 1px solid #3d3d3d;
-  padding: 16px;
+  padding: 14px;
   text-decoration: none;
   color: #f2f2f2;
   display: grid;
   gap: 8px;
   transition: all 0.1s ease;
   overflow: hidden;
+}
+.entries-primary .item {
+  min-height: 68px;
+}
+.entries-compact .item {
+  padding: 12px;
+  gap: 5px;
+  min-height: 58px;
 }
 .item:hover {
   background-color: #f2f2f2;
@@ -134,30 +162,46 @@ h2 span:last-child { color: #f2f2f2; }
   border: 1px dashed #3d3d3d;
   padding: 16px;
 }
-.actions {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px;
-  margin-top: 18px;
+.section-static {
+  position: relative;
+  transition: background-color 0.1s ease, outline 0.1s ease;
 }
-.upload-area {
-  border: 2px dashed #f2f2f2;
-  padding: 36px 20px;
-  text-align: center;
+.section-static.is-dragging {
+  background: #111;
+  outline: 2px dashed #f2f2f2;
+  outline-offset: 6px;
+}
+.upload-control {
+  margin: 0 16px 16px;
+  border-top: 1px solid #3d3d3d;
+  color: #9c9c9c;
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-family: "Victor Mono", monospace;
+  font-size: 12px;
+}
+.upload-control button {
+  background: #090909;
+  color: #f2f2f2;
+  border: 1px solid #f2f2f2;
+  padding: 8px 10px;
+  font-family: "Victor Mono", monospace;
   cursor: pointer;
-  height: 100%;
-  display: grid;
-  place-items: center;
+  white-space: nowrap;
 }
-.upload-area:hover {
-  background-color: #f2f2f2;
+.upload-control button:hover {
+  background: #f2f2f2;
   color: #090909;
 }
 input[type="file"] { display: none; }
 .entry-form {
   display: grid;
+  grid-template-columns: minmax(80px, 0.8fr) minmax(120px, 1.5fr) auto;
   gap: 10px;
-  padding: 14px;
+  padding: 16px;
   border-top: 2px solid #f2f2f2;
 }
 .entry-form input {
@@ -182,10 +226,17 @@ input[type="file"] { display: none; }
 .mock-note {
   color: #9c9c9c;
   font-size: 12px;
-  padding: 14px;
+  padding: 16px;
   border-top: 2px solid #f2f2f2;
 }
 @media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
+  header { grid-template-columns: auto 1fr; }
+  .tagline, .status { grid-column: 1 / -1; }
+  .status { grid-row: auto; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .secondary-grid { grid-template-columns: 1fr; }
+  .entries-primary { grid-template-columns: 1fr; }
+  .entry-form { grid-template-columns: 1fr; }
+  .upload-control { align-items: stretch; flex-direction: column; }
   .section, .upload-card { min-height: auto; }
 }
